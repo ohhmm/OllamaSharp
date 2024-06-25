@@ -137,7 +137,7 @@ public class OllamaApiClientTests
 			await writer.WriteCompletionStreamResponse("The ");
 			await writer.WriteCompletionStreamResponse("sky ");
 			await writer.WriteCompletionStreamResponse("is ");
-			await writer.FinishCompletionStreamResponse("blue.", context: [1, 2, 3]);
+			await writer.FinishCompletionStreamResponse("blue.", context: new int[] { 1, 2, 3 });
 			stream.Seek(0, SeekOrigin.Begin);
 
 			var builder = new StringBuilder();

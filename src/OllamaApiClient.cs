@@ -58,6 +58,17 @@ public class OllamaApiClient : IOllamaApiClient
 		SelectedModel = defaultModel;
 	}
 
+	public async Task<IEnumerable<string>> FetchModelsFromLibrary(CancellationToken cancellationToken = default)
+	{
+	    var response = await _client.GetAsync("https://ollama.com/library?sort=popular", cancellationToken);
+	    response.EnsureSuccessStatusCode();
+
+	    var responseBody = await response.Content.ReadAsStringAsync();
+	    var models = JsonSerializer.Deserialize<IEnumerable<string>>(responseBody);
+
+	    return models ?? Enumerable.Empty<string>();
+	}
+
 	public Task CreateModel(
 		CreateModelRequest request,
 		IResponseStreamer<CreateModelResponse> streamer,
@@ -120,21 +131,33 @@ public class OllamaApiClient : IOllamaApiClient
 		CancellationToken cancellationToken = default) =>
 		PostAsync("api/copy", request, cancellationToken);
 
-	public Task PullModel(
+	public async Task PullModel(
 		PullModelRequest request,
 		IResponseStreamer<PullModelResponse> streamer,
-		CancellationToken cancellationToken = default) =>
-		StreamPostAsync("api/pull", request, streamer, cancellationToken);
+		CancellationToken cancellationToken = default)
+	{
+	    var models = await FetchModelsFromLibrary(cancellationToken);
+	    // Assuming a method to allow user to select a model from the list
+	    var selectedModel = UserSelectModel(models);
+	    request.Model = selectedModel;
+
+	    await StreamPostAsync("api/pull", request, streamer, cancellationToken);
+	}
 
 	public async IAsyncEnumerable<PullModelResponse?> PullModel(
 		PullModelRequest request,
 		[EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
-		var stream = StreamPostAsync<PullModelRequest, PullModelResponse?>(
-			"api/pull", request, cancellationToken);
+	    var models = await FetchModelsFromLibrary(cancellationToken);
+	    // Assuming a method to allow user to select a model from the list
+	    var selectedModel = UserSelectModel(models);
+	    request.Model = selectedModel;
 
-		await foreach (var result in stream)
-			yield return result;
+	    var stream = StreamPostAsync<PullModelRequest, PullModelResponse?>(
+	        "api/pull", request, cancellationToken);
+
+	    await foreach (var result in stream)
+	        yield return result;
 	}
 
 	public Task PushModel(
@@ -523,6 +546,14 @@ public class OllamaApiClient : IOllamaApiClient
 			var line = await reader.ReadLineAsync();
 			yield return JsonSerializer.Deserialize<ChatResponseStream>(line);
 		}
+	}
+
+	private string UserSelectModel(IEnumerable<string> models)
+	{
+	    // Placeholder for user model selection logic
+	    // This method should be implemented to allow the user to select a model from the list
+	    // For now, it returns the first model in the list as a placeholder
+	    return models.FirstOrDefault() ?? string.Empty;
 	}
 }
 
