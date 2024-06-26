@@ -58,6 +58,11 @@ public class OllamaApiClient : IOllamaApiClient
 		SelectedModel = defaultModel;
 	}
 
+	/// <summary>
+	/// Fetches the list of models from the Ollama library.
+	/// </summary>
+	/// <param name="cancellationToken">A token to cancel the operation.</param>
+	/// <returns>A list of model names from the Ollama library.</returns>
 	public async Task<IEnumerable<string>> FetchModelsFromLibrary(CancellationToken cancellationToken = default)
 	{
 	    var response = await _client.GetAsync("https://ollama.com/library?sort=popular", cancellationToken);
@@ -131,10 +136,17 @@ public class OllamaApiClient : IOllamaApiClient
 		CancellationToken cancellationToken = default) =>
 		PostAsync("api/copy", request, cancellationToken);
 
+	/// <summary>
+	/// Pulls a model from the Ollama library and streams the response.
+	/// </summary>
+	/// <param name="request">The request containing the model details.</param>
+	/// <param name="streamer">The streamer to handle the response.</param>
+	/// <param name="cancellationToken">A token to cancel the operation.</param>
+	/// <returns>A task representing the asynchronous operation.</returns>
 	public async Task PullModel(
-		PullModelRequest request,
-		IResponseStreamer<PullModelResponse> streamer,
-		CancellationToken cancellationToken = default)
+	    PullModelRequest request,
+	    IResponseStreamer<PullModelResponse> streamer,
+	    CancellationToken cancellationToken = default)
 	{
 	    var models = await FetchModelsFromLibrary(cancellationToken);
 	    // Assuming a method to allow user to select a model from the list
@@ -144,9 +156,15 @@ public class OllamaApiClient : IOllamaApiClient
 	    await StreamPostAsync("api/pull", request, streamer, cancellationToken);
 	}
 
+	/// <summary>
+	/// Pulls a model from the Ollama library and streams the response as an asynchronous enumerable.
+	/// </summary>
+	/// <param name="request">The request containing the model details.</param>
+	/// <param name="cancellationToken">A token to cancel the operation.</param>
+	/// <returns>An asynchronous enumerable of PullModelResponse.</returns>
 	public async IAsyncEnumerable<PullModelResponse?> PullModel(
-		PullModelRequest request,
-		[EnumeratorCancellation] CancellationToken cancellationToken = default)
+	    PullModelRequest request,
+	    [EnumeratorCancellation] CancellationToken cancellationToken = default)
 	{
 	    var models = await FetchModelsFromLibrary(cancellationToken);
 	    // Assuming a method to allow user to select a model from the list
